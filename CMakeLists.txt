@@ -1,39 +1,34 @@
 cmake_minimum_required(VERSION 3.10)
-project(PollingApp LANGUAGES CXX)
+project(PollingApp)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Путь к Qt (если нужно, укажи свой путь)
-set(CMAKE_PREFIX_PATH "/path/to/Qt/lib/cmake") # Замени на путь к Qt, если не в стандартном месте
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(LIBWEBSOCKETS REQUIRED libwebsockets)
+pkg_check_modules(LIBPQXX REQUIRED libpqxx)
+pkg_check_modules(JSONCPP REQUIRED jsoncpp)
 
-# Найти зависимости
-find_package(Qt6 COMPONENTS Core Gui Qml Quick REQUIRED)
-find_package(libwebsockets REQUIRED)
-find_package(libpqxx REQUIRED)
-find_package(cpp-jwt REQUIRED)
+# Настройка пути к cpp-jwt
+include_directories(${CMAKE_SOURCE_DIR}/cpp-jwt/include)
+link_directories(${CMAKE_SOURCE_DIR}/cpp-jwt/build)
 
-# Включить автоматическую обработку QML
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTORCC ON)
-set(CMAKE_AUTOUIC ON)
+include_directories(
+    ${LIBWEBSOCKETS_INCLUDE_DIRS}
+    ${LIBPQXX_INCLUDE_DIRS}
+    ${JSONCPP_INCLUDE_DIRS}
+    src/common
+)
 
-# Добавить папки с исходниками
-add_subdirectory(src/backend)
-add_subdirectory(src/frontend)
-add_subdirectory(src/common)
-add_subdirectory(tests)
+add_executable(polling_app
+    src/backend/main.cpp
+    src/backend/server.cpp
+    src/backend/database.cpp
+)
 
-# Создать исполняемый файл
-add_executable(polling_app src/main.cpp)
-
-# Линковка библиотек
-target_link_libraries(polling_app PRIVATE
-    Qt6::Core
-    Qt6::Gui
-    Qt6::Qml
-    Qt6::Quick
-    websockets
-    pqxx
-    cpp-jwt
+target_link_libraries(polling_app
+    ${LIBWEBSOCKETS_LIBRARIES}
+    ${LIBPQXX_LIBRARIES}
+    ${JSONCPP_LIBRARIES}
+    jwt
 )
